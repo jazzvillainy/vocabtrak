@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useCallback, useMemo } from "react";
-import { initializeApp, FirebaseApp } from "firebase/app";
+import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  Auth,
   signInAnonymously,
   signInWithCustomToken,
   onAuthStateChanged,
-  User,
+
 } from "firebase/auth";
 import {
   getFirestore,
@@ -19,7 +18,6 @@ import {
   updateDoc,
   deleteDoc,
   Timestamp,
-  DocumentData,
 } from "firebase/firestore";
 import {
   Loader2,
@@ -34,15 +32,26 @@ import {
   Minus,
 } from "lucide-react";
 
+declare const __initial_auth_token: string | undefined;
+declare const __app_id: string | undefined;
+
 // --- Global Firebase & API Configuration ---
-const firebaseConfig: object =
-  typeof __firebase_config !== "undefined" ? JSON.parse(__firebase_config) : {};
+const firebaseConfig: object = {
+  apiKey: "AIzaSyCNQaSaKvB8mYCgD7Um_oow6zUMVfpO-Rc",
+  authDomain: "wordapp-ae5b5.firebaseapp.com",
+  projectId: "wordapp-ae5b5",
+  storageBucket: "wordapp-ae5b5.firebasestorage.app",
+  messagingSenderId: "15749175952",
+  appId: "1:15749175952:web:4a3f56eb942bf69883d615",
+  measurementId: "G-JB0Q0KWNEE",
+};
+
 const initialAuthToken: string | null =
   typeof __initial_auth_token !== "undefined" ? __initial_auth_token : null;
 const appId: string =
   typeof __app_id !== "undefined" ? __app_id : "default-word-app-id";
 const GEMINI_MODEL: string = "gemini-2.5-flash-preview-09-2025";
-const API_KEY: string = ""; // Canvas will provide this if empty
+const API_KEY: string = "AIzaSyCRPsN1f08AJf13kLVL6T8_quDREfK1g-c"; // Canvas will provide this if empty
 
 // --- Type Definitions ---
 
@@ -191,8 +200,8 @@ const fetchWordDetailsFromGemini = async (
       throw new Error(
         "API response structure missing content or invalid JSON."
       );
-    } catch (error: any) {
-      console.error(`Attempt ${i + 1} failed:`, error.message);
+    } catch (error) {
+      console.error(`Attempt ${i + 1} failed:`, error);
       if (i < 2) {
         await new Promise((resolve) => setTimeout(resolve, 2 ** i * 1000));
       } else {
@@ -201,7 +210,7 @@ const fetchWordDetailsFromGemini = async (
           partOfSpeech: null,
           transcription: null,
           examples: [],
-          error: `Failed to fetch details after multiple retries. ${error.message}`,
+          error: `Failed to fetch details after multiple retries. ${error}`,
         };
       }
     }
@@ -282,7 +291,7 @@ const WordDetail: React.FC<WordDetailProps> = ({ wordData, db, onBack }) => {
     );
 
     // Update Firestore with fetched details
-    const updatePayload: DocumentData = {
+    const updatePayload = {
       isFetchingDetails: false,
       definition: details.definition,
       partOfSpeech: details.partOfSpeech,
@@ -696,7 +705,7 @@ const WordList: React.FC<WordListProps> = ({
       />
 
       <h2 className="text-3xl font-bold text-white border-b border-slate-700 pb-3">
-        Your Vocabulary List ({words.length})
+        Word List ({words.length})
       </h2>
 
       {words.length === 0 ? (
@@ -727,7 +736,7 @@ const WordList: React.FC<WordListProps> = ({
 
 const App: React.FC = () => {
   const [db, setDb] = useState<Firestore | null>(null);
-  const [auth, setAuth] = useState<Auth | null>(null);
+  // const [auth, setAuth] = useState<Auth | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
 
@@ -742,7 +751,7 @@ const App: React.FC = () => {
       const firestore: Firestore = getFirestore(app);
       const authInstance: Auth = getAuth(app);
       setDb(firestore);
-      setAuth(authInstance);
+      // setAuth(authInstance);
 
       const unsubscribeAuth = onAuthStateChanged(
         authInstance,
