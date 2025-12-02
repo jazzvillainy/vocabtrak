@@ -2,7 +2,7 @@ import React, { useState, useEffect, useCallback, useMemo } from "react";
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  signInAnonymously,
+  // signInAnonymously,
   signInWithCustomToken,
   onAuthStateChanged,
 
@@ -18,6 +18,7 @@ import {
   updateDoc,
   deleteDoc,
   Timestamp,
+  // DocumentData,
 } from "firebase/firestore";
 import {
   Loader2,
@@ -30,10 +31,12 @@ import {
   Trash2,
   BookOpen,
   Minus,
+  LogIn,
+  UserPlus,
+  LogOut,
+  Mail,
+  Lock,
 } from "lucide-react";
-
-declare const __initial_auth_token: string | undefined;
-declare const __app_id: string | undefined;
 
 // --- Global Firebase & API Configuration ---
 const firebaseConfig: object = {
@@ -46,10 +49,10 @@ const firebaseConfig: object = {
   measurementId: "G-JB0Q0KWNEE",
 };
 
-const initialAuthToken: string | null =
-  typeof __initial_auth_token !== "undefined" ? __initial_auth_token : null;
-const appId: string =
-  typeof __app_id !== "undefined" ? __app_id : "default-word-app-id";
+// const initialAuthToken: string | null =
+  // typeof __initial_auth_token !== "undefined" ? __initial_auth_token : null;
+// const appId: string =
+  // typeof __app_id !== "undefined" ? __app_id : "default-word-app-id";
 const GEMINI_MODEL: string = "gemini-2.5-flash-preview-09-2025";
 const API_KEY: string = "AIzaSyCRPsN1f08AJf13kLVL6T8_quDREfK1g-c"; // Canvas will provide this if empty
 
@@ -98,9 +101,13 @@ interface WordListProps {
   userId: string | null;
 }
 
+interface AuthFormProps {
+  auth: Auth | null;
+  onSuccess: (uid: string) => void;
+}
+
 // --- Utility Functions ---
 
-/** Converts the Firestore Timestamp to a readable date string. */
 const formatDate = (timestamp: Timestamp | null): string => {
   if (!timestamp) return "N/A";
   try {
@@ -113,9 +120,6 @@ const formatDate = (timestamp: Timestamp | null): string => {
   }
 };
 
-/**
- * Fetches definition and details for a word using the Gemini API (with structured JSON output and grounding).
- */
 const fetchWordDetailsFromGemini = async (
   word: string,
   userContext: string
@@ -200,8 +204,8 @@ const fetchWordDetailsFromGemini = async (
       throw new Error(
         "API response structure missing content or invalid JSON."
       );
-    } catch (error) {
-      console.error(`Attempt ${i + 1} failed:`, error);
+    } catch (error: any) {
+      console.error(`Attempt ${i + 1} failed:`, error.message);
       if (i < 2) {
         await new Promise((resolve) => setTimeout(resolve, 2 ** i * 1000));
       } else {
@@ -210,12 +214,11 @@ const fetchWordDetailsFromGemini = async (
           partOfSpeech: null,
           transcription: null,
           examples: [],
-          error: `Failed to fetch details after multiple retries. ${error}`,
+          error: `Failed to fetch details after multiple retries. ${error.message}`,
         };
       }
     }
   }
-  // Should be unreachable, but for TS completeness:
   return {
     definition: null,
     partOfSpeech: null,
@@ -251,13 +254,143 @@ const DetailCard: React.FC<{
   </div>
 );
 
+// --- New: Authentication Form Component ---
+
+const AuthForm: React.FC<AuthFormProps> = ({ auth, onSuccess }) => {
+  const [isLogin, setIsLogin] = useState<boolean>(true);
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [error, setError] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    if (!auth) return;
+
+    setError("");
+    setIsLoading(true);
+
+    try {
+      let userCredential;
+      if (isLogin) {
+        userCredential = await signInWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+      } else {
+        userCredential = await createUserWithEmailAndPassword(
+          auth,
+          email,
+          password
+        );
+      }
+
+      onSuccess(userCredential.user.uid);
+      console.log(
+        isLogin
+          ? "User signed in successfully."
+          : "User registered successfully."
+      );
+    } catch (err: any) {
+      console.error("Authentication Error:", err);
+      // Handle Firebase error codes for user-friendly messages
+      if (err.code === "auth/email-already-in-use") {
+        setError("This email is already registered. Try signing in.");
+      } else if (err.code === "auth/invalid-email") {
+        setError("Invalid email format.");
+      } else if (err.code === "auth/weak-password") {
+        setError("Password should be at least 6 characters.");
+      } else if (
+        err.code === "auth/user-not-found" ||
+        err.code === "auth/wrong-password"
+      ) {
+        setError("Invalid email or password.");
+      } else {
+        setError(`Authentication failed: ${err.message}`);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  return (
+    <div className="max-w-md mx-auto p-8 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 mt-16">
+      <h2 className="text-3xl font-bold text-white mb-6 text-center">
+        {isLogin ? "Sign In" : "Create Account"}
+      </h2>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div className="relative">
+          <Mail className="w-5 h-5 absolute top-3 left-3 text-slate-400" />
+          <input
+            type="email"
+            placeholder="Email"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+            className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-sky-500 focus:border-sky-500"
+          />
+        </div>
+        <div className="relative">
+          <Lock className="w-5 h-5 absolute top-3 left-3 text-slate-400" />
+          <input
+            type="password"
+            placeholder="Password (min 6 characters)"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+            className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-sky-500 focus:border-sky-500"
+          />
+        </div>
+
+        {error && (
+          <div className="text-red-400 bg-red-900/30 p-3 rounded-lg text-sm border border-red-700">
+            {error}
+          </div>
+        )}
+
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="w-full flex justify-center items-center py-3 px-4 rounded-lg shadow-md text-lg font-medium text-white bg-sky-600 hover:bg-sky-700 disabled:bg-sky-800 disabled:opacity-70 transition-colors"
+        >
+          {isLoading ? (
+            <Loader2 className="w-5 h-5 animate-spin mr-2" />
+          ) : isLogin ? (
+            <>
+              <LogIn className="w-5 h-5 mr-2" /> Sign In
+            </>
+          ) : (
+            <>
+              <UserPlus className="w-5 h-5 mr-2" /> Sign Up
+            </>
+          )}
+        </button>
+      </form>
+
+      <button
+        onClick={() => setIsLogin(!isLogin)}
+        className="w-full mt-4 text-center text-sm text-slate-400 hover:text-sky-400 transition-colors"
+      >
+        {isLogin
+          ? "Need an account? Sign Up"
+          : "Already have an account? Sign In"}
+      </button>
+    </div>
+  );
+};
+
+// --- Word List and Detail Components (omitted for brevity, they are the same) ---
+
 const WordDetail: React.FC<WordDetailProps> = ({ wordData, db, onBack }) => {
+  // ... (WordDetail logic is unchanged)
+  // [WordDetail component code remains the same as previous file]
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Function to fetch and update details
   const ensureDetailsFetched = useCallback(async () => {
-    // Guard clauses
     if (
       !db ||
       !wordData.id ||
@@ -269,7 +402,6 @@ const WordDetail: React.FC<WordDetailProps> = ({ wordData, db, onBack }) => {
 
     setIsFetching(true);
     setError(null);
-    console.log(`Fetching details for word: ${wordData.word}`);
 
     const docRef = doc(
       db,
@@ -278,11 +410,9 @@ const WordDetail: React.FC<WordDetailProps> = ({ wordData, db, onBack }) => {
     );
 
     try {
-      // Temporarily mark as fetching in Firestore
       await updateDoc(docRef, { isFetchingDetails: true });
     } catch (e) {
       console.error("Failed to mark as fetching in Firestore:", e);
-      // Continue even if marking fails, but log the error
     }
 
     const details = await fetchWordDetailsFromGemini(
@@ -290,8 +420,7 @@ const WordDetail: React.FC<WordDetailProps> = ({ wordData, db, onBack }) => {
       wordData.userContext
     );
 
-    // Update Firestore with fetched details
-    const updatePayload = {
+    const updatePayload: DocumentData = {
       isFetchingDetails: false,
       definition: details.definition,
       partOfSpeech: details.partOfSpeech,
@@ -301,8 +430,7 @@ const WordDetail: React.FC<WordDetailProps> = ({ wordData, db, onBack }) => {
 
     if (details.error) {
       setError(details.error);
-      console.error("Gemini Fetch Error:", details.error);
-      updatePayload.error = details.error; // Save error to document
+      updatePayload.error = details.error;
     }
 
     try {
@@ -324,7 +452,6 @@ const WordDetail: React.FC<WordDetailProps> = ({ wordData, db, onBack }) => {
   ]);
 
   useEffect(() => {
-    // Trigger fetch if details are missing and not currently being fetched
     if (
       wordData &&
       !wordData.definition &&
@@ -435,6 +562,8 @@ const AddWordForm: React.FC<AddWordFormProps> = ({
   isCollapsed,
   toggleCollapse,
 }) => {
+  // ... (AddWordForm logic is unchanged)
+  // [AddWordForm component code remains the same as previous file]
   const [word, setWord] = useState<string>("");
   const [context, setContext] = useState<string>("");
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
@@ -453,17 +582,15 @@ const AddWordForm: React.FC<AddWordFormProps> = ({
         userContext: context.trim() || "No context specified",
         dateAdded: Timestamp.now(),
         userId: userId,
-        // Initial state for Gemini-fetched data
         definition: null,
         partOfSpeech: null,
         transcription: null,
         examples: [],
-        isFetchingDetails: false, // Flag to prevent multiple fetches
+        isFetchingDetails: false,
       });
       setMessage(`"${word.trim()}" added successfully!`);
       setWord("");
       setContext("");
-      // Collapse the form after successful submission
       toggleCollapse();
     } catch (error) {
       console.error("Error adding document: ", error);
@@ -497,9 +624,7 @@ const AddWordForm: React.FC<AddWordFormProps> = ({
         </span>
       </button>
 
-      {/* Collapsible Content with Animation */}
       <div
-        // Increased max-h to handle potentially larger form/messages safely
         className={`overflow-hidden transition-[max-height] duration-500 ease-in-out ${
           isCollapsed ? "max-h-0" : "max-h-[500px]"
         }`}
@@ -564,9 +689,9 @@ const AddWordForm: React.FC<AddWordFormProps> = ({
 };
 
 const WordItem: React.FC<WordItemProps> = ({ word, onSelect, db }) => {
+  // ... (WordItem logic is unchanged)
+  // [WordItem component code remains the same as previous file]
   const [isExpanded, setIsExpanded] = useState<boolean>(false);
-
-  // We can access global properties like appId here, but db must be passed
   const docPath = `/artifacts/${appId}/public/data/words`;
 
   const toggleExpand = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -579,13 +704,9 @@ const WordItem: React.FC<WordItemProps> = ({ word, onSelect, db }) => {
     wordId: string
   ) => {
     e.stopPropagation();
-    // Since we are not using window.confirm, we rely on the custom UI mandate.
-    // For simplicity and adherence to the single file rule, we'll use a console log message instead of a custom modal.
-    // In a real app, this should be a modal.
     if (!db) return;
 
     console.log(`Simulating confirmation for deletion of word ID: ${wordId}`);
-    // Assuming user confirmed via a custom modal component that would replace this
     try {
       const docRef = doc(db, docPath, wordId);
       await deleteDoc(docRef);
@@ -648,7 +769,6 @@ const WordItem: React.FC<WordItemProps> = ({ word, onSelect, db }) => {
         </div>
       </div>
 
-      {/* Collapsible content for the definition summary */}
       <div
         className={`overflow-hidden transition-[max-height] duration-300 ease-in-out border-t border-slate-700/50 
                            ${
@@ -689,6 +809,8 @@ const WordList: React.FC<WordListProps> = ({
   db,
   userId,
 }) => {
+  // ... (WordList logic is unchanged)
+  // [WordList component code remains the same as previous file]
   const [isFormCollapsed, setIsFormCollapsed] = useState<boolean>(true);
 
   const toggleCollapse = () => {
@@ -705,7 +827,7 @@ const WordList: React.FC<WordListProps> = ({
       />
 
       <h2 className="text-3xl font-bold text-white border-b border-slate-700 pb-3">
-        Word List ({words.length})
+        Your Vocabulary List ({words.length})
       </h2>
 
       {words.length === 0 ? (
@@ -736,7 +858,7 @@ const WordList: React.FC<WordListProps> = ({
 
 const App: React.FC = () => {
   const [db, setDb] = useState<Firestore | null>(null);
-  // const [auth, setAuth] = useState<Auth | null>(null);
+  const [auth, setAuth] = useState<Auth | null>(null);
   const [userId, setUserId] = useState<string | null>(null);
   const [isAuthReady, setIsAuthReady] = useState<boolean>(false);
 
@@ -751,29 +873,29 @@ const App: React.FC = () => {
       const firestore: Firestore = getFirestore(app);
       const authInstance: Auth = getAuth(app);
       setDb(firestore);
-      // setAuth(authInstance);
+      setAuth(authInstance);
 
       const unsubscribeAuth = onAuthStateChanged(
         authInstance,
         async (user: User | null) => {
           if (user) {
             setUserId(user.uid);
-            setIsAuthReady(true);
           } else {
-            // Sign in logic
-            try {
-              if (initialAuthToken) {
+            setUserId(null); // User is not authenticated
+            // In the Canvas environment, try the custom token for automatic login
+            if (initialAuthToken) {
+              try {
                 await signInWithCustomToken(authInstance, initialAuthToken);
-              } else {
-                const anonUser = await signInAnonymously(authInstance);
-                setUserId(anonUser.user.uid);
+              } catch (e) {
+                console.error(
+                  "Custom token sign-in failed. User must log in.",
+                  e
+                );
+                setUserId(null);
               }
-            } catch (e) {
-              console.error("Authentication failed:", e);
-            } finally {
-              setIsAuthReady(true);
             }
           }
+          setIsAuthReady(true);
         }
       );
 
@@ -784,9 +906,9 @@ const App: React.FC = () => {
     }
   }, []);
 
-  // 2. Firestore Real-time Listener
+  // 2. Firestore Real-time Listener (only runs if authenticated)
   useEffect(() => {
-    if (!isAuthReady || !db) return;
+    if (!isAuthReady || !db || !userId) return;
 
     const wordsColRef = collection(db, `/artifacts/${appId}/public/data/words`);
     const wordsQuery = query(wordsColRef);
@@ -813,7 +935,6 @@ const App: React.FC = () => {
           };
         });
 
-        // Sort client-side by dateAdded (newest first)
         wordsList.sort((a, b) => {
           const dateA = a.dateAdded?.seconds || 0;
           const dateB = b.dateAdded?.seconds || 0;
@@ -827,7 +948,7 @@ const App: React.FC = () => {
     );
 
     return () => unsubscribe();
-  }, [isAuthReady, db]);
+  }, [isAuthReady, db, userId]);
 
   const handleSelectWord = (id: string) => {
     setSelectedWordId(id);
@@ -837,20 +958,39 @@ const App: React.FC = () => {
     setSelectedWordId(null);
   };
 
+  const handleSignOut = async () => {
+    if (auth) {
+      await auth.signOut();
+      setUserId(null);
+      setSelectedWordId(null);
+      setWords([]);
+    }
+  };
+
+  const handleAuthSuccess = (uid: string) => {
+    setUserId(uid);
+  };
+
   const selectedWordData = useMemo(() => {
     return words.find((w) => w.id === selectedWordId) || null;
   }, [words, selectedWordId]);
 
   const isAppLoading = !isAuthReady || !db;
 
-  const currentView =
-    selectedWordId && selectedWordData ? (
-      <WordDetail
-        wordData={selectedWordData}
-        db={db!} // Non-null assertion is safe as isAppLoading handles the null check
-        onBack={handleBack}
-      />
-    ) : (
+  let content;
+  if (isAppLoading) {
+    content = <LoadingIndicator message="Connecting to services..." />;
+  } else if (!userId || !auth) {
+    // Show Auth form if user is not logged in
+    content = <AuthForm auth={auth} onSuccess={handleAuthSuccess} />;
+  } else if (selectedWordId && selectedWordData) {
+    // Show Word Details
+    content = (
+      <WordDetail wordData={selectedWordData} db={db!} onBack={handleBack} />
+    );
+  } else {
+    // Show Word List
+    content = (
       <WordList
         words={words}
         onSelectWord={handleSelectWord}
@@ -858,6 +998,7 @@ const App: React.FC = () => {
         userId={userId}
       />
     );
+  }
 
   return (
     <div
@@ -873,13 +1014,22 @@ const App: React.FC = () => {
             <span className="sm:hidden">Vocab Tracker</span>
           </h1>
           <div className="flex items-center space-x-4">
-            <p className="text-sm text-slate-500 hidden sm:block">
-              User ID:{" "}
-              <span className="font-mono text-slate-400">
-                {userId || "Connecting..."}
-              </span>
-            </p>
-            {/* Theme Toggle */}
+            {userId && (
+              <p className="text-sm text-slate-500 hidden sm:block">
+                ID: <span className="font-mono text-slate-400">{userId}</span>
+              </p>
+            )}
+
+            {userId && auth && (
+              <button
+                onClick={handleSignOut}
+                className="p-2 rounded-lg text-red-400 hover:text-red-300 transition-colors border border-slate-700 bg-slate-800 flex items-center text-sm"
+                title="Sign Out"
+              >
+                <LogOut className="w-5 h-5" />
+                <span className="hidden md:inline ml-2">Sign Out</span>
+              </button>
+            )}
             <button
               onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
               className="p-2 rounded-full text-slate-400 hover:text-white transition-colors border border-slate-700 bg-slate-800"
@@ -897,13 +1047,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto py-8">
-        {isAppLoading ? (
-          <LoadingIndicator message="Connecting to database and authenticating..." />
-        ) : (
-          currentView
-        )}
-      </main>
+      <main className="max-w-4xl mx-auto py-8">{content}</main>
     </div>
   );
 };
