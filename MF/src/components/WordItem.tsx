@@ -33,6 +33,19 @@ export const WordItem: React.FC<WordItemProps> = ({ word, onSelect, db }) => {
 
   const hasDetails = !!word.definition;
   const isFetching = word.isFetchingDetails;
+  // try to read local cached details for preview
+  let localPreviewDefinition: string | null = null;
+  try {
+    const raw = localStorage.getItem(`word-details-${word.id}`);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      const details = parsed.details || parsed;
+      if (details && details.definition)
+        localPreviewDefinition = details.definition;
+    }
+  } catch (e) {
+    // ignore
+  }
 
   return (
     <div className="flex flex-col bg-slate-800 border border-slate-700 rounded-xl shadow-md transition-shadow hover:shadow-lg">
@@ -94,7 +107,9 @@ export const WordItem: React.FC<WordItemProps> = ({ word, onSelect, db }) => {
       >
         <div className="p-4 pt-3">
           <p className="text-slate-300 text-base">
-            {word.definition && hasDetails ? (
+            {localPreviewDefinition ? (
+              localPreviewDefinition
+            ) : word.definition && hasDetails ? (
               word.definition
             ) : isFetching ? (
               <span className="text-sky-400 italic">

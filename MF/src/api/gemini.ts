@@ -1,7 +1,9 @@
 import { GeminiDetails } from "../types";
 
-const GEMINI_MODEL = "gemini-2.5-flash-preview-09-2025";
-const API_KEY = "AIzaSyCRPsN1f08AJf13kLVL6T8_quDREfK1g-c";
+const env = import.meta.env as unknown as Record<string, string>;
+const GEMINI_MODEL =
+  env.VITE_GEMINI_MODEL || "gemini-2.5-flash-preview-09-2025";
+const API_KEY = env.VITE_GEMINI_API_KEY || "";
 
 export const fetchWordDetailsFromGemini = async (
   word: string,
@@ -60,12 +62,14 @@ export const fetchWordDetailsFromGemini = async (
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
+      console.log("resulttttttttttttttttttttttttttttttt:", response);
 
       if (!response.ok) {
         throw new Error(`API response status: ${response.status}`);
       }
 
       const result = await response.json();
+      console.log("resulttttttttttttttttttttttttttttttt:", result);
       const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (jsonText) {

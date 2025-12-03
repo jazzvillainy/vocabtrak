@@ -9,6 +9,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { AddWordFormProps } from "../types";
+import { fetchWordDetailsFromGemini } from "../api/gemini";
 import { firebaseConfig } from "../config/firebase";
 
 export const AddWordForm: React.FC<AddWordFormProps> = ({
@@ -30,7 +31,8 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
     setMessage("");
 
     try {
-      await addDoc(
+      // Add metadata to Firestore and capture doc id
+      const docRef = await addDoc(
         collection(
           db,
           `/artifacts/${firebaseConfig.projectId}/public/data/words`
@@ -47,6 +49,32 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
           isFetchingDetails: false,
         }
       );
+
+      // Immediately fetch details from Gemini and store locally
+      try {
+        const details = await fetchWordDetailsFromGemini(
+          word.trim(),
+          context.trim() || "No context specified"
+        );
+        // include basic meta and timestamp
+        const payload = {
+          id: docRef.id,
+          word: word.trim(),
+          fetchedAt: new Date().toISOString(),
+          details,
+        };
+        try {
+          localStorage.setItem(
+            `word-details-${docRef.id}`,
+            JSON.stringify(payload)
+          );
+        } catch (e) {
+          console.error("Failed to save word details to localStorage:", e);
+        }
+      } catch (e) {
+        console.error("Gemini fetch failed after adding word:", e);
+      }
+
       setMessage(`"${word.trim()}" added successfully!`);
       setWord("");
       setContext("");
