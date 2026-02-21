@@ -9,7 +9,6 @@ import { DetailCard } from "./DetailCard";
 
 export const WordDetail: React.FC<WordDetailProps> = ({
   wordData,
-  db,
   onBack,
 }) => {
   const [isFetching, setIsFetching] = useState<boolean>(false);
@@ -74,7 +73,7 @@ export const WordDetail: React.FC<WordDetailProps> = ({
   const displayData = {
     ...wordData,
     ...(localDetails || {}),
-  } as any;
+  } 
   const isLoading = isFetching || wordData.isFetchingDetails;
 
   return (

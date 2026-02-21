@@ -1,16 +1,25 @@
 import { GeminiDetails } from "../types";
 
 const env = import.meta.env as unknown as Record<string, string>;
-const GEMINI_MODEL =
-  env.VITE_GEMINI_MODEL || "gemini-2.5-flash-preview-09-2025";
+const GEMINI_MODEL = env.VITE_GEMINI_MODEL || "gemini-2.0-flash";
 const API_KEY = env.VITE_GEMINI_API_KEY || "";
 
 export const fetchWordDetailsFromGemini = async (
   word: string,
-  userContext: string
+  userContext: string,
 ): Promise<GeminiDetails> => {
-  const systemPrompt = `You are a word definition and language analysis expert. Based on the user's word and context, find its definition, part of speech, phonetic transcription, and provide 2 clear example sentences. Respond ONLY with a JSON object that adheres strictly to the provided schema.`;
-  const userQuery = `Word: "${word}". Context: "${userContext}". Please provide the definition, part of speech, phonetic transcription, and 2 example sentences.`;
+  if (!API_KEY) {
+    return {
+      definition: "",
+      partOfSpeech: "",
+      transcription: "",
+      examples: [],
+      error:
+        "API key is not configured. Please set VITE_GEMINI_API_KEY in your environment.",
+    };
+  }
+  const systemPrompt = `You are a word definition expert. Return ONLY a valid JSON object with the exact structure: {"definition": "string", "partOfSpeech": "string", "transcription": "string", "examples": ["string", "string"]}`;
+  const userQuery = `Define this word in context: "${word}" (Context: "${userContext}"). Return only valid JSON.`;
 
   const definitionSchema = {
     type: "OBJECT",
@@ -26,30 +35,26 @@ export const fetchWordDetailsFromGemini = async (
       },
       transcription: {
         type: "STRING",
-        description:
-          "The phonetic transcription or pronunciation guide (e.g., /ˌsɪl.əˈɡɪ.zəm/).",
+        description: "The phonetic transcription or pronunciation guide.",
       },
       examples: {
         type: "ARRAY",
-        description: "An array of 2-3 clear example sentences using the word.",
-        items: { type: "STRING" },
+        items: {
+          type: "STRING",
+        },
+        description: "An array of 2 example sentences using the word.",
       },
     },
-    propertyOrdering: [
-      "definition",
-      "partOfSpeech",
-      "transcription",
-      "examples",
-    ],
+    required: ["definition", "partOfSpeech", "transcription", "examples"],
   };
 
   const payload = {
     contents: [{ parts: [{ text: userQuery }] }],
-    tools: [{ google_search: {} }],
     systemInstruction: { parts: [{ text: systemPrompt }] },
     generationConfig: {
       responseMimeType: "application/json",
       responseSchema: definitionSchema,
+      temperature: 1,
     },
   };
 
@@ -62,23 +67,25 @@ export const fetchWordDetailsFromGemini = async (
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
       });
-      console.log("resulttttttttttttttttttttttttttttttt:", response);
 
       if (!response.ok) {
+        const errorText = await response.text();
+        console.error(`API Error (${response.status}):`, errorText);
         throw new Error(`API response status: ${response.status}`);
       }
 
       const result = await response.json();
-      console.log("resulttttttttttttttttttttttttttttttt:", result);
+      console.log("Gemini Response:", result);
+
       const jsonText = result.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (jsonText) {
         try {
           const parsedJson = JSON.parse(jsonText);
           return {
-            definition: parsedJson.definition || null,
-            partOfSpeech: parsedJson.partOfSpeech || null,
-            transcription: parsedJson.transcription || null,
+            definition: parsedJson.definition || "",
+            partOfSpeech: parsedJson.partOfSpeech || "",
+            transcription: parsedJson.transcription || "",
             examples: Array.isArray(parsedJson.examples)
               ? parsedJson.examples
               : [],
@@ -89,7 +96,7 @@ export const fetchWordDetailsFromGemini = async (
         }
       }
       throw new Error(
-        "API response structure missing content or invalid JSON."
+        "API response structure missing content or invalid JSON.",
       );
     } catch (error: any) {
       console.error(`Attempt ${i + 1} failed:`, error.message);
@@ -98,8 +105,8 @@ export const fetchWordDetailsFromGemini = async (
       } else {
         return {
           definition: "Could not fetch definition details.",
-          partOfSpeech: null,
-          transcription: null,
+          partOfSpeech: "",
+          transcription: "",
           examples: [],
           error: `Failed to fetch details after multiple retries. ${error.message}`,
         };

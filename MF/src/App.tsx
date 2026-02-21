@@ -48,12 +48,11 @@ const App: React.FC = () => {
           if (user) {
             setUserId(user.uid);
           } else {
-            setUserId(null); // User is not authenticated
+            setUserId(""); // User is not authenticated
           }
           setIsAuthReady(true);
         }
       );
-
       return () => unsubscribeAuth();
     } catch (e) {
       console.error("Firebase Initialization Error:", e);

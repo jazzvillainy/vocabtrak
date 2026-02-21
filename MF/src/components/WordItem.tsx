@@ -43,7 +43,7 @@ export const WordItem: React.FC<WordItemProps> = ({ word, onSelect, db }) => {
       if (details && details.definition)
         localPreviewDefinition = details.definition;
     }
-  } catch (e) {
+  } catch {
     // ignore
   }
 
