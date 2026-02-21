@@ -1,95 +1,80 @@
 import React, { useState, useCallback, useEffect } from "react";
-import { updateDoc, doc, DocumentData } from "firebase/firestore";
 import { ChevronUp, BookOpen } from "lucide-react";
 import { WordDetailProps } from "../types";
 import { formatDate } from "../utils/dateUtils";
 import { fetchWordDetailsFromGemini } from "../api/gemini";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { DetailCard } from "./DetailCard";
-import { firebaseConfig } from "../config/firebase";
+// (no firestore document writes; details are cached locally)
 
 export const WordDetail: React.FC<WordDetailProps> = ({
   wordData,
-  db,
   onBack,
 }) => {
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
+  const [localDetails, setLocalDetails] = useState<any | null>(null);
 
   const ensureDetailsFetched = useCallback(async () => {
-    if (
-      !db ||
-      !wordData.id ||
-      wordData.definition ||
-      wordData.isFetchingDetails ||
-      isFetching
-    )
-      return;
+    if (!wordData?.id || isFetching) return;
+
+    // Try localStorage first
+    try {
+      const raw = localStorage.getItem(`word-details-${wordData.id}`);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        setLocalDetails(parsed.details || parsed);
+        return;
+      }
+    } catch (e) {
+      console.error("Failed to read local details:", e);
+    }
 
     setIsFetching(true);
     setError(null);
-
-    const docRef = doc(
-      db,
-      `/artifacts/${firebaseConfig.projectId}/public/data/words`,
-      wordData.id
-    );
-
-    try {
-      await updateDoc(docRef, { isFetchingDetails: true });
-    } catch (e) {
-      console.error("Failed to mark as fetching in Firestore:", e);
-    }
 
     const details = await fetchWordDetailsFromGemini(
       wordData.word,
       wordData.userContext
     );
 
-    const updatePayload: DocumentData = {
-      isFetchingDetails: false,
-      definition: details.definition,
-      partOfSpeech: details.partOfSpeech,
-      transcription: details.transcription,
-      examples: details.examples,
-    };
+    if (details) {
+      // Save to localStorage for later quick access
+      const payload = {
+        id: wordData.id,
+        word: wordData.word,
+        fetchedAt: new Date().toISOString(),
+        details,
+      };
+      try {
+        localStorage.setItem(
+          `word-details-${wordData.id}`,
+          JSON.stringify(payload)
+        );
+        setLocalDetails(details);
+      } catch (e) {
+        console.error("Failed to save word details to localStorage:", e);
+      }
+    }
 
     if (details.error) {
       setError(details.error);
-      updatePayload.error = details.error;
     }
 
-    try {
-      await updateDoc(docRef, updatePayload);
-    } catch (e) {
-      console.error("Failed to update word document with details:", e);
-      setError((prev) => prev || "Failed to save details to the database.");
-    } finally {
-      setIsFetching(false);
-    }
-  }, [
-    db,
-    wordData.id,
-    wordData.definition,
-    isFetching,
-    wordData.word,
-    wordData.userContext,
-    wordData.isFetchingDetails,
-  ]);
+    setIsFetching(false);
+  }, [wordData, isFetching]);
 
   useEffect(() => {
-    if (
-      wordData &&
-      !wordData.definition &&
-      !wordData.isFetchingDetails &&
-      !isFetching
-    ) {
+    if (wordData && !isFetching) {
       ensureDetailsFetched();
     }
   }, [wordData, ensureDetailsFetched, isFetching]);
 
-  const displayData = wordData;
-  const isLoading = isFetching || displayData.isFetchingDetails;
+  const displayData = {
+    ...wordData,
+    ...(localDetails || {}),
+  } 
+  const isLoading = isFetching || wordData.isFetchingDetails;
 
   return (
     <div className="p-4 md:p-8 space-y-6">
