@@ -1,19 +1,16 @@
 import React, { useState, useCallback, useEffect } from "react";
 import { ChevronUp, BookOpen } from "lucide-react";
-import { WordDetailProps } from "../types";
+import { WordDetailProps, GeminiDetails } from "../types";
 import { formatDate } from "../utils/dateUtils";
 import { fetchWordDetailsFromGemini } from "../api/gemini";
 import { LoadingIndicator } from "./LoadingIndicator";
 import { DetailCard } from "./DetailCard";
 // (no firestore document writes; details are cached locally)
 
-export const WordDetail: React.FC<WordDetailProps> = ({
-  wordData,
-  onBack,
-}) => {
+export const WordDetail: React.FC<WordDetailProps> = ({ wordData, onBack }) => {
   const [isFetching, setIsFetching] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
-  const [localDetails, setLocalDetails] = useState<any | null>(null);
+  const [localDetails, setLocalDetails] = useState<GeminiDetails | null>(null);
 
   const ensureDetailsFetched = useCallback(async () => {
     if (!wordData?.id || isFetching) return;
@@ -35,7 +32,7 @@ export const WordDetail: React.FC<WordDetailProps> = ({
 
     const details = await fetchWordDetailsFromGemini(
       wordData.word,
-      wordData.userContext
+      wordData.userContext,
     );
 
     if (details) {
@@ -49,7 +46,7 @@ export const WordDetail: React.FC<WordDetailProps> = ({
       try {
         localStorage.setItem(
           `word-details-${wordData.id}`,
-          JSON.stringify(payload)
+          JSON.stringify(payload),
         );
         setLocalDetails(details);
       } catch (e) {
@@ -73,7 +70,7 @@ export const WordDetail: React.FC<WordDetailProps> = ({
   const displayData = {
     ...wordData,
     ...(localDetails || {}),
-  } 
+  };
   const isLoading = isFetching || wordData.isFetchingDetails;
 
   return (

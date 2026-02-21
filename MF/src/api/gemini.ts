@@ -98,8 +98,10 @@ export const fetchWordDetailsFromGemini = async (
       throw new Error(
         "API response structure missing content or invalid JSON.",
       );
-    } catch (error: any) {
-      console.error(`Attempt ${i + 1} failed:`, error.message);
+    } catch (error: unknown) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      console.error(`Attempt ${i + 1} failed:`, errorMessage);
       if (i < 2) {
         await new Promise((resolve) => setTimeout(resolve, 2 ** i * 1000));
       } else {
@@ -108,7 +110,7 @@ export const fetchWordDetailsFromGemini = async (
           partOfSpeech: "",
           transcription: "",
           examples: [],
-          error: `Failed to fetch details after multiple retries. ${error.message}`,
+          error: `Failed to fetch details after multiple retries. ${errorMessage}`,
         };
       }
     }
