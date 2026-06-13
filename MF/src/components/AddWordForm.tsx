@@ -35,7 +35,7 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
       const docRef = await addDoc(
         collection(
           db,
-          `/artifacts/${firebaseConfig.projectId}/public/data/words`
+          `/artifacts/${firebaseConfig.projectId}/public/data/words`,
         ),
         {
           word: word.trim(),
@@ -47,15 +47,16 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
           transcription: null,
           examples: [],
           isFetchingDetails: false,
-        }
+        },
       );
 
       // Immediately fetch details from Gemini and store locally
       try {
         const details = await fetchWordDetailsFromGemini(
           word.trim(),
-          context.trim() || "No context specified"
+          context.trim() || "No context specified",
         );
+        console.log("Gemini details returned:", details);
         // include basic meta and timestamp
         const payload = {
           id: docRef.id,
@@ -63,10 +64,11 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
           fetchedAt: new Date().toISOString(),
           details,
         };
+        console.log("Local payload to save:", payload);
         try {
           localStorage.setItem(
             `word-details-${docRef.id}`,
-            JSON.stringify(payload)
+            JSON.stringify(payload),
           );
         } catch (e) {
           console.error("Failed to save word details to localStorage:", e);
@@ -89,24 +91,24 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
   };
 
   return (
-    <div className="bg-slate-900 border border-slate-700 rounded-xl shadow-inner">
+    <div className="card">
       <button
         onClick={toggleCollapse}
-        className="w-full text-left p-4 flex items-center justify-between transition-colors hover:bg-slate-800 rounded-xl focus:outline-none focus:ring-2 focus:ring-sky-500"
+        className="w-full text-left flex-between transition-colors hover:bg-surface-hover rounded-lg focus:outline-none focus:ring-2 focus:ring-accent"
       >
-        <h2 className="text-2xl font-bold text-white flex items-center">
+        <h2 className="flex items-center">
           {isCollapsed ? (
-            <Plus className="w-5 h-5 mr-2 text-sky-400" />
+            <Plus className="w-5 h-5 mr-md icon" />
           ) : (
-            <Minus className="w-5 h-5 mr-2 text-sky-400" />
+            <Minus className="w-5 h-5 mr-md icon" />
           )}
           Add New Word of the Day
         </h2>
-        <span className="text-slate-400">
+        <span className="text-muted">
           {isCollapsed ? (
-            <ChevronDown className="w-5 h-5" />
+            <ChevronDown className="w-5 h-5 icon" />
           ) : (
-            <ChevronUp className="w-5 h-5" />
+            <ChevronUp className="w-5 h-5 icon" />
           )}
         </span>
       </button>
@@ -116,38 +118,26 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
           isCollapsed ? "max-h-0" : "max-h-[500px]"
         }`}
       >
-        <form onSubmit={handleSubmit} className="p-4 pt-0 space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <form onSubmit={handleSubmit} className="pt-lg space-y-lg">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-lg">
             <div>
-              <label
-                htmlFor="word"
-                className="block text-sm font-medium text-slate-300 mb-1"
-              >
-                Word
-              </label>
+              <label htmlFor="word">Word</label>
               <input
                 id="word"
                 type="text"
                 value={word}
                 onChange={(e) => setWord(e.target.value)}
                 required
-                className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-sky-500 focus:border-sky-500"
                 placeholder="e.g., Ephemeral"
               />
             </div>
             <div>
-              <label
-                htmlFor="context"
-                className="block text-sm font-medium text-slate-300 mb-1"
-              >
-                Context Heard/Used In
-              </label>
+              <label htmlFor="context">Context Heard/Used In</label>
               <input
                 id="context"
                 type="text"
                 value={context}
                 onChange={(e) => setContext(e.target.value)}
-                className="w-full p-2 bg-slate-800 border border-slate-700 rounded-lg text-white focus:ring-sky-500 focus:border-sky-500"
                 placeholder="e.g., Read in an old philosophy book"
               />
             </div>
@@ -156,18 +146,18 @@ export const AddWordForm: React.FC<AddWordFormProps> = ({
           <button
             type="submit"
             disabled={isSubmitting || !word.trim()}
-            className="w-full flex justify-center items-center py-2 px-4 border border-transparent rounded-lg shadow-sm text-base font-medium text-white bg-sky-600 hover:bg-sky-700 disabled:bg-sky-800 disabled:opacity-70 transition-colors"
+            className="btn-primary w-full"
           >
             {isSubmitting ? (
-              <Loader2 className="w-5 h-5 animate-spin mr-2" />
+              <Loader2 className="w-5 h-5 animate-spin icon" />
             ) : (
-              <Zap className="w-5 h-5 mr-2" />
+              <Zap className="w-5 h-5 icon" />
             )}
             {isSubmitting ? "Adding..." : "Add Word"}
           </button>
 
           {message && (
-            <p className="text-sm text-center text-green-400 mt-2">{message}</p>
+            <p className="text-sm text-center text-success mt-md">{message}</p>
           )}
         </form>
       </div>
