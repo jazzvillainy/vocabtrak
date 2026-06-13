@@ -1,23 +1,27 @@
 import { GeminiDetails } from "../types";
 
 const env = import.meta.env as unknown as Record<string, string>;
-const GEMINI_MODEL = env.VITE_GEMINI_MODEL || "gemini-2.0-flash";
-const API_KEY = env.VITE_GEMINI_API_KEY || "";
+const DEFAULT_GEMINI_MODEL = env.VITE_GEMINI_MODEL || "gemini-2.0-flash";
+const DEFAULT_API_KEY = env.VITE_GEMINI_API_KEY || "";
 
 export const fetchWordDetailsFromGemini = async (
   word: string,
   userContext: string,
+  apiKey?: string,
+  model: string = DEFAULT_GEMINI_MODEL,
 ): Promise<GeminiDetails> => {
-  if (!API_KEY) {
+  const effectiveKey = apiKey || DEFAULT_API_KEY;
+  if (!effectiveKey) {
     return {
       definition: "",
       partOfSpeech: "",
       transcription: "",
       examples: [],
       error:
-        "API key is not configured. Please set VITE_GEMINI_API_KEY in your environment.",
+        "API key is not configured. Provide an API key or set VITE_GEMINI_API_KEY.",
     };
   }
+
   const systemPrompt = `You are a word definition expert. Return ONLY a valid JSON object with the exact structure: {"definition": "string", "partOfSpeech": "string", "transcription": "string", "examples": ["string", "string"]}`;
   const userQuery = `Define this word in context: "${word}" (Context: "${userContext}"). Return only valid JSON.`;
 
@@ -39,10 +43,8 @@ export const fetchWordDetailsFromGemini = async (
       },
       examples: {
         type: "ARRAY",
-        items: {
-          type: "STRING",
-        },
-        description: "An array of 2 example sentences using the word.",
+        items: { type: "STRING" },
+        description: "An array of example sentences using the word.",
       },
     },
     required: ["definition", "partOfSpeech", "transcription", "examples"],
@@ -58,7 +60,7 @@ export const fetchWordDetailsFromGemini = async (
     },
   };
 
-  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${GEMINI_MODEL}:generateContent?key=${API_KEY}`;
+  const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${effectiveKey}`;
 
   for (let i = 0; i < 3; i++) {
     try {
@@ -81,7 +83,9 @@ export const fetchWordDetailsFromGemini = async (
 
       if (jsonText) {
         try {
+          console.log("Gemini raw JSON text:", jsonText);
           const parsedJson = JSON.parse(jsonText);
+          console.log("Gemini parsed JSON:", parsedJson);
           return {
             definition: parsedJson.definition || "",
             partOfSpeech: parsedJson.partOfSpeech || "",

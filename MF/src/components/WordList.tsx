@@ -17,7 +17,7 @@ export const WordList: React.FC<WordListProps> = ({
   };
 
   return (
-    <div className="p-4 md:p-8 space-y-8">
+    <div className="space-y-lg section">
       <AddWordForm
         db={db}
         userId={userId}
@@ -25,20 +25,18 @@ export const WordList: React.FC<WordListProps> = ({
         toggleCollapse={toggleCollapse}
       />
 
-      <h2 className="text-3xl font-bold text-white border-b border-slate-700 pb-3">
-        Your Vocabulary List ({words.length})
-      </h2>
+      <h2 className="section-title">Your Vocabulary List ({words.length})</h2>
 
       {words.length === 0 ? (
-        <div className="text-center p-12 bg-slate-800 rounded-xl text-slate-400">
-          <BookOpen className="w-10 h-10 mx-auto mb-3 text-sky-500" />
-          <p className="text-lg">Your word list is empty!</p>
-          <p className="text-sm mt-1">
-            Click "Add New Word of the Day" above to get started.
+        <div className="empty-state">
+          <BookOpen className="w-12 h-12 mx-auto mb-md icon" />
+          <p>Your word list is empty!</p>
+          <p className="text-muted mt-md">
+            Click "Add New Word" to get started.
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-lg">
           {words.map((word) => (
             <WordItem
               key={word.id}

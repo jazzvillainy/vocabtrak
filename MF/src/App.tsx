@@ -33,14 +33,30 @@ const App: React.FC = () => {
 
   const [words, setWords] = useState<Word[]>([]);
   const [selectedWordId, setSelectedWordId] = useState<string | null>(null);
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
+  const [theme, setTheme] = useState<"dark" | "light">(() => {
+    try {
+      if (typeof window !== "undefined" && window.matchMedia) {
+        return window.matchMedia("(prefers-color-scheme: dark)").matches
+          ? "dark"
+          : "light";
+      }
+    } catch {
+      /* ignore */
+    }
+    return "dark";
+  });
+  const [userOverride, setUserOverride] = useState(false);
 
   // 1. Firebase Initialization and Authentication
   useEffect(() => {
     try {
       const { db: firestore, auth: authInstance } = initializeFirebase();
-      setDb(firestore);
-      setAuth(authInstance);
+
+      // Schedule state updates to avoid synchronous setState in the effect body
+      const t = setTimeout(() => {
+        setDb(firestore);
+        setAuth(authInstance);
+      }, 0);
 
       const unsubscribeAuth = onAuthStateChanged(
         authInstance,
@@ -51,12 +67,16 @@ const App: React.FC = () => {
             setUserId(""); // User is not authenticated
           }
           setIsAuthReady(true);
-        }
+        },
       );
-      return () => unsubscribeAuth();
+      return () => {
+        clearTimeout(t);
+        unsubscribeAuth();
+      };
     } catch (e) {
       console.error("Firebase Initialization Error:", e);
-      setIsAuthReady(true);
+      // defer state update to avoid synchronous setState in effect
+      setTimeout(() => setIsAuthReady(true), 0);
     }
   }, []);
 
@@ -66,7 +86,7 @@ const App: React.FC = () => {
 
     const wordsColRef = collection(
       db,
-      `/artifacts/${firebaseConfig.projectId}/public/data/words`
+      `/artifacts/${firebaseConfig.projectId}/public/data/words`,
     );
     const wordsQuery = query(wordsColRef);
 
@@ -101,7 +121,7 @@ const App: React.FC = () => {
       },
       (error) => {
         console.error("Firestore Listener Error:", error);
-      }
+      },
     );
 
     return () => unsubscribe();
@@ -157,46 +177,77 @@ const App: React.FC = () => {
     );
   }
 
+  useEffect(() => {
+    try {
+      document.documentElement.setAttribute("data-theme", theme);
+    } catch {
+      /* ignore */
+    }
+  }, [theme]);
+
+  useEffect(() => {
+    if (typeof window === "undefined" || !window.matchMedia) return;
+    type MQ = MediaQueryList & {
+      addListener?: (l: (e: MediaQueryListEvent) => void) => void;
+      removeListener?: (l: (e: MediaQueryListEvent) => void) => void;
+    };
+    const mq: MQ = window.matchMedia("(prefers-color-scheme: dark)");
+    const handleChange = (ev: MediaQueryListEvent) => {
+      if (!userOverride) setTheme(ev.matches ? "dark" : "light");
+    };
+    // older browsers use addListener; prefer addEventListener when available
+    (mq as unknown as EventTarget).addEventListener(
+      "change",
+      handleChange as EventListener,
+    );
+    return () => {
+      (mq as unknown as EventTarget).removeEventListener(
+        "change",
+        handleChange as EventListener,
+      );
+    };
+  }, [userOverride]);
+
   return (
-    <div
-      className={`min-h-screen font-sans ${
-        theme === "dark" ? "bg-slate-900" : "bg-gray-100"
-      } text-gray-100`}
-    >
+    <div className={`min-h-screen font-sans app-root`}>
       {/* Header / Nav */}
-      <header className="sticky top-0 z-10 bg-slate-950 border-b border-slate-700 shadow-xl">
-        <div className="max-w-4xl mx-auto p-4 flex justify-between items-center">
-          <h1 className="text-2xl font-black text-sky-400">
-            <span className="hidden sm:inline">Vocabulary Tracker</span>
-            <span className="sm:hidden">Vocab Tracker</span>
+      <header className="sticky top-0 z-10 app-header shadow-xl">
+        <div className="max-w-4xl mx-auto px-md py-sm flex justify-between items-center gap-md">
+          <h1 className="font-bold app-logo whitespace-nowrap">
+            <span className="logo-hash">#</span>
+            <span>Alphabet</span>
+            <span className="logo-subtitle">— words, defined</span>
           </h1>
-          <div className="flex items-center space-x-4">
+          <div className="flex items-center gap-md ml-auto">
             {userId && (
-              <p className="text-sm text-slate-500 hidden sm:block">
-                ID: <span className="font-mono text-slate-400">{userId}</span>
+              <p className="text-xs text-muted hidden sm:block">
+                <span className="font-mono">{userId?.slice(0, 8)}</span>
               </p>
             )}
 
             {userId && auth && (
               <button
                 onClick={handleSignOut}
-                className="p-2 rounded-lg text-red-400 hover:text-red-300 transition-colors border border-slate-700 bg-slate-800 flex items-center text-sm"
+                className="btn-secondary px-md py-sm text-xs flex items-center hover:bg-error/10 hover:text-error"
                 title="Sign Out"
               >
-                <LogOut className="w-5 h-5" />
-                <span className="hidden md:inline ml-2">Sign Out</span>
+                <LogOut className="w-4 h-4" />
+                <span className="hidden md:inline ml-sm">Sign Out</span>
               </button>
             )}
             <button
-              onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
-              className="p-2 rounded-full text-slate-400 hover:text-white transition-colors border border-slate-700 bg-slate-800"
+              onClick={() => {
+                setUserOverride(true);
+                setTheme(theme === "dark" ? "light" : "dark");
+              }}
+              className="p-sm rounded-full hover:bg-surface transition-colors"
               title="Toggle Theme"
               aria-label="Toggle dark/light theme"
             >
               {theme === "dark" ? (
-                <Moon className="w-5 h-5" />
+                <Moon className="w-4 h-4 icon" />
               ) : (
-                <Sun className="w-5 h-5" />
+                <Sun className="w-4 h-4 icon" />
               )}
             </button>
           </div>
@@ -204,7 +255,7 @@ const App: React.FC = () => {
       </header>
 
       {/* Main Content */}
-      <main className="max-w-4xl mx-auto py-8">{content}</main>
+      <main className="max-w-4xl mx-auto py-lg px-md">{content}</main>
     </div>
   );
 };

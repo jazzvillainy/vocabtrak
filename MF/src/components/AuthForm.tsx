@@ -27,18 +27,18 @@ export const AuthForm: React.FC<AuthFormProps> = ({ auth, onSuccess }) => {
         userCredential = await signInWithEmailAndPassword(
           auth,
           email,
-          password
+          password,
         );
       } else {
         userCredential = await createUserWithEmailAndPassword(
           auth,
           email,
-          password
+          password,
         );
       }
 
       onSuccess(userCredential.user.uid);
-      } catch (err) {
+    } catch (err) {
       console.error("Authentication Error:", err);
       // Handle Firebase error codes for user-friendly messages
       // if (err.code === "auth/email-already-in-use") {
@@ -61,69 +61,92 @@ export const AuthForm: React.FC<AuthFormProps> = ({ auth, onSuccess }) => {
   };
 
   return (
-    <div className="max-w-md mx-auto p-8 bg-slate-800 rounded-xl shadow-2xl border border-slate-700 mt-16">
-      <h2 className="text-3xl font-bold text-white mb-6 text-center">
-        {isLogin ? "Sign In" : "Create Account"}
-      </h2>
+    <div className="min-h-screen flex items-center justify-center px-md">
+      <div className="w-full max-w-sm card">
+        <h2 className="text-xl font-bold mb-lg text-center">
+          {isLogin ? "Sign In" : "Create Account"}
+        </h2>
 
-      <form onSubmit={handleSubmit} className="space-y-5">
-        <div className="relative">
-          <Mail className="w-5 h-5 absolute top-3 left-3 text-slate-400" />
-          <input
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            required
-            className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-sky-500 focus:border-sky-500"
-          />
-        </div>
-        <div className="relative">
-          <Lock className="w-5 h-5 absolute top-3 left-3 text-slate-400" />
-          <input
-            type="password"
-            placeholder="Password (min 6 characters)"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-            minLength={6}
-            className="w-full pl-10 pr-4 py-3 bg-slate-700 border border-slate-600 rounded-lg text-white placeholder-slate-400 focus:ring-sky-500 focus:border-sky-500"
-          />
-        </div>
-
-        {error && (
-          <div className="text-red-400 bg-red-900/30 p-3 rounded-lg text-sm border border-red-700">
-            {error}
+        <form onSubmit={handleSubmit} className="space-y-lg">
+          <div>
+            <label
+              htmlFor="email"
+              className="block text-sm font-semibold mb-sm"
+            >
+              Email
+            </label>
+            <div className="relative">
+              <Mail className="w-4 h-4 absolute left-md top-1/2 transform -translate-y-1/2 icon pointer-events-none" />
+              <input
+                id="email"
+                type="email"
+                placeholder="you@example.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full pl-2xl pr-md py-sm"
+              />
+            </div>
           </div>
-        )}
+
+          <div>
+            <label
+              htmlFor="password"
+              className="block text-sm font-semibold mb-sm"
+            >
+              Password
+            </label>
+            <div className="relative">
+              <Lock className="w-4 h-4 absolute left-md top-1/2 transform -translate-y-1/2 icon pointer-events-none" />
+              <input
+                id="password"
+                type="password"
+                placeholder="Min 6 characters"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                minLength={6}
+                className="w-full pl-2xl pr-md py-sm"
+              />
+            </div>
+          </div>
+
+          {error && (
+            <div className="bg-error/10 border border-error text-error p-md rounded-lg text-sm">
+              {error}
+            </div>
+          )}
+
+          <button
+            type="submit"
+            disabled={isLoading}
+            className="btn-primary w-full flex justify-center items-center py-md"
+          >
+            {isLoading ? (
+              <Loader2 className="w-4 h-4 animate-spin icon" />
+            ) : isLogin ? (
+              <>
+                <LogIn className="w-4 h-4 icon mr-sm" />
+                Sign In
+              </>
+            ) : (
+              <>
+                <UserPlus className="w-4 h-4 icon mr-sm" />
+                Sign Up
+              </>
+            )}
+          </button>
+        </form>
 
         <button
-          type="submit"
-          disabled={isLoading}
-          className="w-full flex justify-center items-center py-3 px-4 rounded-lg shadow-md text-lg font-medium text-white bg-sky-600 hover:bg-sky-700 disabled:bg-sky-800 disabled:opacity-70 transition-colors"
+          onClick={() => setIsLogin(!isLogin)}
+          className="w-full mt-lg pt-lg border-t border-border text-center text-sm text-muted hover:text-accent transition-colors"
         >
-          {isLoading ? (
-            <Loader2 className="w-5 h-5 animate-spin mr-2" />
-          ) : isLogin ? (
-            <>
-              <LogIn className="w-5 h-5 mr-2" /> Sign In
-            </>
-          ) : (
-            <>
-              <UserPlus className="w-5 h-5 mr-2" /> Sign Up
-            </>
-          )}
+          {isLogin
+            ? "Need an account? Sign Up"
+            : "Already have an account? Sign In"}
         </button>
-      </form>
-
-      <button
-        onClick={() => setIsLogin(!isLogin)}
-        className="w-full mt-4 text-center text-sm text-slate-400 hover:text-sky-400 transition-colors"
-      >
-        {isLogin
-          ? "Need an account? Sign Up"
-          : "Already have an account? Sign In"}
-      </button>
+      </div>
     </div>
   );
 };
