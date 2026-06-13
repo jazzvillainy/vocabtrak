@@ -214,7 +214,7 @@ const App: React.FC = () => {
       <header className="sticky top-0 z-10 app-header shadow-xl">
         <div className="max-w-4xl mx-auto px-md py-sm flex justify-between items-center gap-md">
           <h1 className="font-bold app-logo whitespace-nowrap">
-            <span className="logo-hash">#</span>
+         
             <span>Alphabet</span>
             <span className="logo-subtitle">— words, defined</span>
           </h1>
