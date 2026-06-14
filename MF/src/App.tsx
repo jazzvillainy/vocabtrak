@@ -6,7 +6,7 @@ import {
   onSnapshot,
   type Firestore,
 } from "firebase/firestore";
-import { Moon, Sun, LogOut, Motorbike, Star, Sunset, Lightbulb } from "lucide-react";
+import { Moon, Sun, LogOut } from "lucide-react";
 
 // Types
 import { Word } from "./types";
