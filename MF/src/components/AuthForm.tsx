@@ -76,7 +76,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ auth, onSuccess }) => {
               Email
             </label>
             <div className="relative">
-              <Mail className="w-4 h-4 absolute left-md top-1/2 transform -translate-y-1/2 icon pointer-events-none" />
+              {/* <Mail className="w-4 h-4 absolute left-md top-1/2 transform -translate-y-1/2 icon pointer-events-none" /> */}
               <input
                 id="email"
                 type="email"
@@ -97,7 +97,7 @@ export const AuthForm: React.FC<AuthFormProps> = ({ auth, onSuccess }) => {
               Password
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 absolute left-md top-1/2 transform -translate-y-1/2 icon pointer-events-none" />
+              {/* <Lock className="w-4 h-4 absolute left-md top-1/2 transform -translate-y-1/2 icon pointer-events-none" /> */}
               <input
                 id="password"
                 type="password"

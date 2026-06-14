@@ -6,7 +6,7 @@ import {
   onSnapshot,
   type Firestore,
 } from "firebase/firestore";
-import { Moon, Sun, LogOut } from "lucide-react";
+import { Moon, Sun, LogOut, Motorbike, Star, Sunset, Lightbulb } from "lucide-react";
 
 // Types
 import { Word } from "./types";
@@ -214,8 +214,7 @@ const App: React.FC = () => {
       <header className="sticky top-0 z-10 app-header shadow-xl">
         <div className="max-w-4xl mx-auto px-md py-sm flex justify-between items-center gap-md">
           <h1 className="font-bold app-logo whitespace-nowrap">
-         
-            <span >Alphabet</span>
+            <span>Alphabet</span>
             <span className="logo-subtitle">— words, defined</span>
           </h1>
           <div className="flex items-center gap-md ml-auto">
