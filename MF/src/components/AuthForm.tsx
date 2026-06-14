@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { Loader2, LogIn, UserPlus, Mail, Lock } from "lucide-react";
+import { Loader2, LogIn, UserPlus } from "lucide-react";
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
