@@ -7,9 +7,9 @@ export const DetailCard: React.FC<DetailCardProps> = ({
   className = "",
 }) => (
   <div className={`card ${className}`}>
-    <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-md">
+    <h3 className="text-xs font-bold text-accent uppercase tracking-widest mb-lg">
       {title}
     </h3>
-    <div>{children}</div>
+    <div className="space-y-md">{children}</div>
   </div>
 );

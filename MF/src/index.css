@@ -135,17 +135,20 @@ h6 {
   font-family: "Audiowide", "Space Grotesk", sans-serif !important;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.08em;
   line-height: 1.2;
   margin: 0;
   color: var(--text);
+  text-shadow: 0 0 10px rgba(6, 182, 212, 0.1);
 }
 
 h1 {
   font-size: clamp(1rem, 5vw, 1.25rem);
+  text-shadow: 0 0 15px rgba(6, 182, 212, 0.15);
 }
 h2 {
   font-size: clamp(0.875rem, 4vw, 1.125rem);
+  text-shadow: 0 0 12px rgba(6, 182, 212, 0.1);
 }
 h3 {
   font-size: clamp(0.875rem, 3vw, 1rem);
@@ -157,14 +160,17 @@ h4 {
 p {
   line-height: 1.6;
   margin: 0;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  letter-spacing: 0.01em;
 }
 
 /* ============================================================================
    HEADER/NAVBAR
    ============================================================================ */
 .app-root .app-header {
-  background-color: rgba(15, 23, 42, 0.98);
-  border-bottom: 1px solid var(--border);
+  background-color: var(--bg);
+  border-bottom: 2px solid var(--accent);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
   padding: var(--spacing-md) 0;
   position: sticky;
   top: 0;
@@ -187,6 +193,10 @@ p {
   white-space: nowrap;
   margin: 0;
   font-size: 1rem;
+  font-family: "Audiowide", sans-serif;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
 }
 
 .app-root .logo-hash {
@@ -229,28 +239,28 @@ p {
    ============================================================================ */
 .card {
   background-color: var(--surface);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-lg);
-  padding: var(--spacing-lg);
-  box-shadow: var(--shadow-sm);
-  transition: all 0.2s ease;
+  padding: var(--spacing-xl);
+  box-shadow: 0 0 20px rgba(6, 182, 212, 0.1);
+  transition: all 0.3s ease;
 }
 
 .card:hover {
-  box-shadow: var(--shadow-md);
   border-color: var(--accent);
+  box-shadow: 0 0 30px rgba(6, 182, 212, 0.2);
 }
 
 .card-header {
   margin-bottom: var(--spacing-md);
   padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--accent);
 }
 
 .card-body {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-md);
+  gap: var(--spacing-lg);
 }
 
 /* ============================================================================
@@ -259,19 +269,21 @@ p {
 input,
 textarea,
 select {
-  font-family: inherit;
+  font-family: "Space Grotesk", system-ui, sans-serif;
   background-color: var(--bg-secondary);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 2px solid var(--border);
   border-radius: var(--radius-md);
   padding: var(--spacing-sm) var(--spacing-md);
-  font-size: 1rem;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
   transition: all 0.2s ease;
 }
 
 input::placeholder,
 textarea::placeholder {
   color: var(--text-secondary);
+  opacity: 0.7;
 }
 
 input:focus,
@@ -279,24 +291,30 @@ textarea:focus,
 select:focus {
   outline: none;
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  background-color: rgba(6, 182, 212, 0.05);
+  box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.15);
 }
 
 label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
   margin-bottom: var(--spacing-sm);
   color: var(--text);
+  font-family: "Space Grotesk", system-ui, sans-serif;
 }
 
 /* ============================================================================
    BUTTONS
    ============================================================================ */
 button {
-  font-family: inherit;
-  font-weight: 600;
-  font-size: 1rem;
+  font-family: "Space Grotesk", system-ui, sans-serif;
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   border: none;
   border-radius: var(--radius-md);
   padding: var(--spacing-sm) var(--spacing-lg);
@@ -309,33 +327,40 @@ button {
 }
 
 .btn-primary {
-  background-color: var(--accent);
+  background: linear-gradient(135deg, var(--accent), var(--accent-dark));
   color: var(--bg);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.4);
 }
 
 .btn-primary:hover {
-  background-color: var(--accent-dark);
+  background: linear-gradient(135deg, var(--accent-dark), var(--accent));
+  box-shadow: 0 0 25px rgba(6, 182, 212, 0.6);
 }
 
 .btn-secondary {
   background-color: var(--surface);
   color: var(--text);
-  border: 1px solid var(--border);
+  border: 2px solid var(--accent);
 }
 
 .btn-secondary:hover {
-  background-color: var(--surface-hover);
+  background-color: rgba(6, 182, 212, 0.1);
   border-color: var(--accent);
+  box-shadow: 0 0 15px rgba(6, 182, 212, 0.2);
 }
 
 .btn-ghost {
   background-color: transparent;
   color: var(--accent);
-  border: 1px solid var(--accent);
+  border: 2px solid var(--accent);
+  box-shadow: inset 0 0 10px rgba(6, 182, 212, 0.1);
 }
 
 .btn-ghost:hover {
   background-color: rgba(6, 182, 212, 0.1);
+  box-shadow:
+    inset 0 0 10px rgba(6, 182, 212, 0.2),
+    0 0 15px rgba(6, 182, 212, 0.3);
 }
 
 button:disabled {
@@ -351,10 +376,15 @@ button:disabled {
 }
 
 .section-title {
+  font-family: "Audiowide", sans-serif;
   font-size: 1.5rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-md);
-  border-bottom: 1px solid var(--border);
+  border-bottom: 2px solid var(--accent);
+  color: var(--accent);
 }
 
 /* ============================================================================
@@ -369,6 +399,9 @@ button:disabled {
 
 .text-muted {
   color: var(--text-secondary);
+  font-family: "Major Mono Display", monospace;
+  font-size: 0.75rem;
+  letter-spacing: 0.05em;
 }
 
 .text-error {
@@ -381,6 +414,8 @@ button:disabled {
 
 .accent {
   color: var(--accent);
+  font-weight: 700;
+  letter-spacing: 0.05em;
 }
 
 .grid-2 {
@@ -419,6 +454,71 @@ button:disabled {
   gap: var(--spacing-lg);
 }
 
+.space-y-xl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-xl);
+}
+
+.space-y-2xl {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2xl);
+}
+
+/* ============================================================================
+   MARGIN & PADDING UTILITIES
+   ============================================================================ */
+.mb-sm {
+  margin-bottom: var(--spacing-sm);
+}
+
+.mb-md {
+  margin-bottom: var(--spacing-md);
+}
+
+.mb-lg {
+  margin-bottom: var(--spacing-lg);
+}
+
+.mb-xl {
+  margin-bottom: var(--spacing-xl);
+}
+
+.mt-0 {
+  margin-top: 0;
+}
+
+.mt-sm {
+  margin-top: var(--spacing-sm);
+}
+
+.mt-md {
+  margin-top: var(--spacing-md);
+}
+
+.mt-lg {
+  margin-top: var(--spacing-lg);
+}
+
+.pb-lg {
+  padding-bottom: var(--spacing-lg);
+}
+
+.pb-xl {
+  padding-bottom: var(--spacing-xl);
+}
+
+.px-md {
+  padding-left: var(--spacing-md);
+  padding-right: var(--spacing-md);
+}
+
+.py-sm {
+  padding-top: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+}
+
 /* ============================================================================
    EMPTY STATES
    ============================================================================ */
@@ -448,6 +548,20 @@ button:disabled {
   }
 }
 
+@keyframes glow {
+  0%,
+  100% {
+    text-shadow: 0 0 10px rgba(6, 182, 212, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(6, 182, 212, 0.8);
+  }
+}
+
 .animate-spin {
   animation: spin 1s linear infinite;
+}
+
+.glow {
+  animation: glow 2s ease-in-out infinite;
 }

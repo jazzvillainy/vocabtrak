@@ -78,7 +78,7 @@ export const WordDetail: React.FC<WordDetailProps> = ({ wordData, onBack }) => {
   const isLoading = isFetching || wordData.isFetchingDetails;
 
   return (
-    <div className="space-y-lg section">
+    <div className="space-y-xl section">
       <button
         onClick={onBack}
         className="flex items-center accent hover:opacity-90 transition-opacity font-medium mb-lg"
@@ -87,15 +87,15 @@ export const WordDetail: React.FC<WordDetailProps> = ({ wordData, onBack }) => {
         Back to Word List
       </button>
 
-      <header className="border-b border-border pb-lg">
+      <header className="border-b border-border pb-xl space-y-md">
         <h1 className="text-4xl font-extrabold">{displayData.word}</h1>
-        <p className="text-muted mt-md flex items-center">
+        <p className="text-muted mt-0 flex items-center">
           <BookOpen className="w-4 h-4 mr-sm icon" />
           Added: {formatDate(displayData.dateAdded)}
         </p>
-        <p className="text-sm text-muted mt-sm">
+        <p className="text-sm hidden text-muted mt-sm">
           <span className="font-semibold">User ID: </span>
-          {displayData.userId}
+          {/* {displayData.userId} */}
         </p>
       </header>
 
@@ -111,7 +111,7 @@ export const WordDetail: React.FC<WordDetailProps> = ({ wordData, onBack }) => {
           message={`Fetching definition and examples for "${displayData.word}"...`}
         />
       ) : (
-        <div className="grid md:grid-cols-2 gap-lg">
+        <div className="grid md:grid-cols-2 gap-xl">
           <DetailCard title="Definition">
             <p className="text-lg">
               {displayData.definition ||
